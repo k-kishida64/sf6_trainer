@@ -12,8 +12,8 @@ const videos: VideoEntry[] = []
 type SessionState = 'idle' | 'waiting' | 'playing' | 'finished'
 
 function App() {
-  const [minimumWait, setMinimumWait] = useState(2)
-  const [maximumWait, setMaximumWait] = useState(5)
+  const [intervalSeconds, setIntervalSeconds] = useState(2)
+  const [playSeconds, setPlaySeconds] = useState(3)
   const [sessionState, setSessionState] = useState<SessionState>('idle')
   const [selectedVideo, setSelectedVideo] = useState<VideoEntry | null>(null)
   const [uploadedVideos, setUploadedVideos] = useState<VideoEntry[]>([])
@@ -22,9 +22,11 @@ function App() {
   const [videoError, setVideoError] = useState(false)
   const [isConverting, setIsConverting] = useState(false)
   const [conversionMessage, setConversionMessage] = useState('')
+  const [roundNumber, setRoundNumber] = useState(0)
   const videoRef = useRef<HTMLVideoElement>(null)
   const timerRef = useRef<number | null>(null)
   const countdownRef = useRef<number | null>(null)
+  const lastVideoIdRef = useRef<string | null>(null)
   const uploadedVideosRef = useRef(uploadedVideos)
   uploadedVideosRef.current = uploadedVideos
 
@@ -109,28 +111,29 @@ function App() {
     }
   }
 
-  const startSession = () => {
+  function startSession() {
     clearTimer()
     videoRef.current?.pause()
-    const minimum = Math.max(0, Number(minimumWait) || 0)
-    const maximum = Math.max(minimum, Number(maximumWait) || minimum)
-    const selected = availableVideos[Math.floor(Math.random() * availableVideos.length)]
+    const interval = Math.max(0, Number(intervalSeconds) || 0)
+    const playDuration = Math.max(0.1, Number(playSeconds) || 0.1)
+    const candidates = availableVideos.filter((video) => video.id !== lastVideoIdRef.current)
+    const pool = candidates.length > 0 ? candidates : availableVideos
+    const selected = pool[Math.floor(Math.random() * pool.length)]
     if (!selected) {
       setVideoError(true)
       return
     }
-    const wait = minimum + Math.random() * (maximum - minimum)
-
-    setMinimumWait(minimum)
-    setMaximumWait(maximum)
+    setIntervalSeconds(interval)
+    setPlaySeconds(playDuration)
     setSelectedVideo(selected)
+    lastVideoIdRef.current = selected.id
     setVideoError(false)
-    setWaitSeconds(wait)
-    setRemainingSeconds(wait)
+    setWaitSeconds(interval)
+    setRemainingSeconds(interval)
     setSessionState('waiting')
     const startedAt = Date.now()
     countdownRef.current = window.setInterval(() => {
-      setRemainingSeconds(Math.max(0, wait - (Date.now() - startedAt) / 1000))
+      setRemainingSeconds(Math.max(0, interval - (Date.now() - startedAt) / 1000))
     }, 50)
 
     timerRef.current = window.setTimeout(() => {
@@ -139,7 +142,9 @@ function App() {
       countdownRef.current = null
       setRemainingSeconds(0)
       setSessionState('playing')
-    }, wait * 1000)
+      setRoundNumber((current) => current + 1)
+      timerRef.current = window.setTimeout(startSession, playDuration * 1000)
+    }, interval * 1000)
   }
 
   useEffect(() => {
@@ -159,6 +164,7 @@ function App() {
 
   const resetSession = () => {
     stopSession()
+    lastVideoIdRef.current = null
     setSelectedVideo(null)
     setWaitSeconds(null)
     if (videoRef.current) {
@@ -194,8 +200,8 @@ function App() {
 
       <section className="stage" aria-live="polite">
         <div className={`stage-glow state-${sessionState}`} />
-        {selectedVideo ? selectedVideo.kind === 'gif' ? (
-          <img className="training-video" src={selectedVideo.src} alt={selectedVideo.label} onError={() => setVideoError(true)} />
+        {selectedVideo && sessionState !== 'waiting' ? selectedVideo.kind === 'gif' ? (
+          <img key={`${selectedVideo.id}-${roundNumber}`} className="training-video" src={selectedVideo.src} alt={selectedVideo.label} onError={() => setVideoError(true)} />
         ) : (
           <video ref={videoRef} className="training-video" src={selectedVideo.src} playsInline muted preload="auto" controls={sessionState === 'playing' || sessionState === 'finished'} onError={() => setVideoError(true)} onEnded={() => setSessionState('finished')} />
         ) : <div className="empty-stage"><span className="crosshair">+</span><p>Choose a drill to begin</p></div>}
@@ -205,11 +211,11 @@ function App() {
       </section>
 
       <section className="control-panel">
-        <div className="panel-heading"><div><p className="eyebrow">Session setup</p><h2>Random interval</h2></div><span className="range-label">{waitSeconds === null ? '2.0 - 5.0 s' : `${waitSeconds.toFixed(1)} s picked`}</span></div>
+        <div className="panel-heading"><div><p className="eyebrow">Session setup</p><h2>Drill timing</h2></div><span className="range-label">{waitSeconds === null ? '2.0 / 3.0 s' : `${waitSeconds.toFixed(1)} s interval`}</span></div>
         <div className="range-controls">
-          <label><span>Minimum</span><div className="number-input"><input type="number" min="0" max="60" step="0.5" value={minimumWait} onChange={(event) => setMinimumWait(Number(event.target.value))} /><b>s</b></div></label>
+          <label><span>Interval</span><div className="number-input"><input type="number" min="0" max="60" step="0.5" value={intervalSeconds} onChange={(event) => setIntervalSeconds(Number(event.target.value))} /><b>s</b></div></label>
           <div className="range-connector" />
-          <label><span>Maximum</span><div className="number-input"><input type="number" min="0" max="60" step="0.5" value={maximumWait} onChange={(event) => setMaximumWait(Number(event.target.value))} /><b>s</b></div></label>
+          <label><span>Play</span><div className="number-input"><input type="number" min="0.1" max="60" step="0.5" value={playSeconds} onChange={(event) => setPlaySeconds(Number(event.target.value))} /><b>s</b></div></label>
         </div>
         <div className="actions"><button className="primary-action" type="button" onClick={startSession}><span>▶</span> Start drill</button><button className="secondary-action" type="button" onClick={stopSession} disabled={sessionState === 'idle'}>Stop</button><button className="reset-action" type="button" onClick={resetSession} aria-label="Reset session">↻</button></div>
         <label className={`upload-control ${isConverting ? 'is-converting' : ''}`}><span>＋</span> {isConverting ? 'Converting...' : 'Add MOV / MP4 / GIF'}<input type="file" accept="video/quicktime,video/mp4,image/gif,.mov,.mp4,.gif" multiple onChange={handleVideoUpload} disabled={isConverting} /></label>
