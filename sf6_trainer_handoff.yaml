@@ -1,0 +1,201 @@
+# SF6 Trainer 開発引き継ぎプロンプト
+
+project:
+  name: "sf6_trainer"
+  purpose: >
+    Street Fighter 6（SF6）のゲーム練習用として、
+    登録したゲーム動画をランダムな間隔で再生し、
+    プレイヤーの反応を練習できるiPhone向けWebアプリを作成する。
+
+development_environment:
+  os: "Windows"
+  editor: "Visual Studio Code"
+  framework: "React"
+  language: "TypeScript"
+  build_tool: "Vite"
+  linter: "ESLint"
+
+current_status:
+  environment_setup: "完了"
+  vite_project: "作成済み"
+  project_name: "sf6_trainer"
+  database: false
+  server_contract: false
+
+important_constraints:
+  - "自分のiPhone 1台で使用する個人用アプリ"
+  - "現時点では外部サーバーを契約しない"
+  - "クラウドDBを使用しない"
+  - "動画は開発時にReactプロジェクトへ直接配置する"
+  - "まず最小構成を完成させ、必要になった機能だけ後から追加する"
+  - "最終的にはiPhoneのホーム画面からアプリのように起動できる形を目指す"
+  - "最初から複雑なデータベースやバックエンドを導入しない"
+
+initial_project_structure:
+  expected:
+    - "public/videos/"
+    - "src/"
+    - "src/App.tsx"
+  video_storage:
+    location: "public/videos/"
+    example:
+      - "public/videos/video01.mp4"
+      - "public/videos/video02.mp4"
+      - "public/videos/video03.mp4"
+
+core_requirements:
+  main:
+    description: >
+      あらかじめ登録した複数のゲーム動画からランダムに動画を選択し、
+      指定したインターバル後に再生する。
+
+  requirements:
+    - id: 1
+      name: "動画登録"
+      description: >
+        開発者がReactプロジェクトのpublic/videos/に動画ファイルを配置する。
+
+    - id: 2
+      name: "ランダム動画選択"
+      description: >
+        登録されている動画からランダムに1本を選択する。
+
+    - id: 3
+      name: "ランダム待機時間"
+      description: >
+        動画再生前にランダムな待機時間を設定できる。
+        例：最小2秒、最大5秒なら2〜5秒の範囲からランダムに待機する。
+
+    - id: 4
+      name: "動画再生"
+      description: >
+        待機時間終了後、選択された動画を再生する。
+
+    - id: 5
+      name: "ボタン入力"
+      description: >
+        将来的に画面上へゲーム用ボタンをオーバーレイ表示し、
+        iPhoneのタップ入力を受け付ける。
+
+    - id: 6
+      name: "正解判定"
+      description: >
+        動画ごとに設定された正解ボタンと、
+        プレイヤーが入力したボタンを比較する。
+
+    - id: 7
+      name: "反応時間"
+      description: >
+        動画再生または指定された判定タイミングから、
+        プレイヤーがボタン入力するまでの時間を計測する。
+
+    - id: 8
+      name: "結果表示"
+      description: >
+        正解・不正解および反応時間を表示する。
+
+implementation_plan:
+  phase_1:
+    goal: "最小動作確認"
+    tasks:
+      - "public/videos/を作成する"
+      - "テスト用mp4を数本配置する"
+      - "動画一覧をTypeScriptで定義する"
+      - "動画をランダムに選択する処理を実装する"
+      - "最小待機時間と最大待機時間を設定できるようにする"
+      - "ランダム待機後に動画を再生する"
+      - "STARTボタンを実装する"
+      - "STOP/RESET等の基本操作を必要に応じて実装する"
+
+  phase_2:
+    goal: "ゲーム練習機能"
+    tasks:
+      - "動画ごとに正解ボタンを設定する"
+      - "ゲーム用ボタンUIをオーバーレイする"
+      - "iPhoneのタップ入力を受け付ける"
+      - "正解・不正解を判定する"
+      - "反応時間を計測する"
+      - "結果を表示する"
+
+  phase_3:
+    goal: "使いやすさの向上"
+    tasks:
+      - "動画管理画面"
+      - "待機時間設定画面"
+      - "練習モード設定"
+      - "成績表示"
+      - "統計情報"
+      - "必要に応じてブラウザ内ストレージを導入する"
+
+  phase_4:
+    goal: "iPhone向け完成"
+    tasks:
+      - "PWA化"
+      - "iPhone Safariでの動作確認"
+      - "ホーム画面への追加"
+      - "オフライン動作の確認"
+      - "iPhone画面サイズへの最適化"
+      - "タッチ操作への最適化"
+
+architecture:
+  frontend:
+    framework: "React"
+    language: "TypeScript"
+    bundler: "Vite"
+
+  initial_storage:
+    videos: "public/videos/"
+    settings: "TypeScript/React state"
+    results: "initially React state only"
+
+  backend:
+    required: false
+
+  database:
+    required: false
+
+  external_server:
+    required: false
+
+future_storage_policy:
+  initial:
+    description: >
+      動画はpublic/videos/に直接配置する。
+      動画をiPhoneから追加する機能は現時点では実装しない。
+
+  future:
+    description: >
+      将来的にiPhoneから動画を追加したくなった場合のみ、
+      IndexedDBなどのブラウザ内ストレージを検討する。
+      外部DBやクラウドストレージは現時点では不要。
+
+development_principles:
+  - "最初から過剰設計しない"
+  - "動作する最小構成を先に完成させる"
+  - "必要になるまでIndexedDBを導入しない"
+  - "必要になるまでバックエンドを作らない"
+  - "必要になるまで外部サービスを使わない"
+  - "React/TypeScriptの一般的な設計を優先する"
+  - "コンポーネントは必要に応じて分割する"
+  - "iPhoneでのタッチ操作を最終目標としてUIを設計する"
+  - "SF6の練習用途を前提とするが、特定のゲーム仕様に依存しすぎない構造にする"
+
+current_next_task:
+  priority: 1
+  task: >
+    まずpublic/videos/を作成し、
+    テスト用動画を配置したうえで、
+    React画面から動画をランダムに選択し、
+    指定したランダム待機時間後に再生する
+    最小プロトタイプを実装する。
+
+instructions_to_ai:
+  - "現在のプロジェクト構成を確認してから実装すること"
+  - "既存コードを不用意に削除しないこと"
+  - "実装前に必要なファイル変更を簡潔に説明すること"
+  - "まずPhase 1だけを実装すること"
+  - "Phase 2以降の機能を勝手に先行実装しないこと"
+  - "必要なnpmパッケージがあれば理由を説明すること"
+  - "可能な限り標準的なReact/TypeScript機能を使用すること"
+  - "実装後はnpm run buildなどでエラーがないことを確認すること"
+  - "iPhoneでの最終利用を前提としてレスポンシブなUIにすること"
