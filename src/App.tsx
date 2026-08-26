@@ -13,7 +13,7 @@ type SessionState = 'idle' | 'waiting' | 'playing' | 'finished'
 
 function App() {
   const [intervalSeconds, setIntervalSeconds] = useState(2)
-  const [playSeconds, setPlaySeconds] = useState(3)
+  const [playSeconds, setPlaySeconds] = useState(5)
   const [sessionState, setSessionState] = useState<SessionState>('idle')
   const [selectedVideo, setSelectedVideo] = useState<VideoEntry | null>(null)
   const [uploadedVideos, setUploadedVideos] = useState<VideoEntry[]>([])
@@ -211,7 +211,7 @@ function App() {
       </section>
 
       <section className="control-panel">
-        <div className="panel-heading"><div><p className="eyebrow">Session setup</p><h2>Drill timing</h2></div><span className="range-label">{waitSeconds === null ? '2.0 / 3.0 s' : `${waitSeconds.toFixed(1)} s interval`}</span></div>
+        <div className="panel-heading"><div><p className="eyebrow">Session setup</p><h2>Drill timing</h2></div><span className="range-label">{waitSeconds === null ? '2.0 / 5.0 s' : `${waitSeconds.toFixed(1)} s interval`}</span></div>
         <div className="range-controls">
           <label><span>Interval</span><div className="number-input"><input type="number" min="0" max="60" step="0.5" value={intervalSeconds} onChange={(event) => setIntervalSeconds(Number(event.target.value))} /><b>s</b></div></label>
           <div className="range-connector" />
