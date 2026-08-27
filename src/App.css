@@ -16,6 +16,8 @@
 }
 
 .topbar { gap: 14px; margin-bottom: 28px; }
+.brand-link { display: flex; align-items: center; gap: 14px; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.brand-link:hover h1 { color: #ed7250; }
 .brand-mark { display: grid; place-items: center; width: 44px; height: 44px; background: #d95f3f; color: #111820; font: 700 20px/1 'Barlow Condensed', sans-serif; letter-spacing: 0; }
 .eyebrow { margin: 0; color: #84909b; font: 700 11px/1.2 'Space Mono', monospace; letter-spacing: 0.08em; text-transform: uppercase; }
 h1, h2 { margin: 0; color: #f3f5f6; font-family: 'Barlow Condensed', sans-serif; font-weight: 600; letter-spacing: 0; text-transform: uppercase; }

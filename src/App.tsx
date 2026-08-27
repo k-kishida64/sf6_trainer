@@ -341,11 +341,13 @@ function App() {
   return (
     <main className="app-shell">
       <header className="topbar">
-        <div className="brand-mark" aria-hidden="true">SF</div>
-        <div>
-          <p className="eyebrow">Reaction lab / 01</p>
-          <h1>SF6 Trainer</h1>
-        </div>
+        <button className="brand-link" type="button" onClick={() => window.location.reload()} aria-label="SF6 Trainerを再読み込み">
+          <div className="brand-mark" aria-hidden="true">SF</div>
+          <div>
+            <p className="eyebrow">Reaction lab / 01</p>
+            <h1>SF6 Trainer</h1>
+          </div>
+        </button>
         <span className="offline-badge"><span /> Local mode</span>
       </header>
 
