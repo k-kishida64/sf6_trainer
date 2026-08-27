@@ -306,7 +306,8 @@ footer { justify-content: space-between; margin-top: 24px; color: #687681; font:
   }
 }
 
-.include-video { width: 100%; padding: 7px 10px; border: 0; border-top: 1px solid #29343e; background: #1a222a; color: #84909b; font: 9px/1 'Space Mono', monospace; text-align: left; text-transform: uppercase; cursor: pointer; }
+.gif-actions { display: flex; align-items: stretch; border-top: 1px solid #29343e; background: #1a222a; }
+.include-video { flex: 1; min-width: 0; padding: 7px 10px; border: 0; background: transparent; color: #84909b; font: 9px/1 'Space Mono', monospace; text-align: left; text-transform: uppercase; cursor: pointer; }
 .include-video.is-included { color: #78b979; }
 .include-video:hover { background: #25323d; color: #e6a263; }
 
@@ -316,6 +317,10 @@ footer { justify-content: space-between; margin-top: 24px; color: #687681; font:
 .gif-card.is-selected { border-color: #d95f3f; }
 .gif-select { display: block; width: 100%; padding: 0; border: 0; background: transparent; color: #d4dadd; text-align: left; cursor: pointer; }
 .gif-select img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #080b0f; }
-.gif-select span { display: block; overflow: hidden; padding: 9px 10px 7px; font: 10px/1.2 'Space Mono', monospace; text-overflow: ellipsis; white-space: nowrap; }
-.edit-video { width: 100%; padding: 7px 10px; border: 0; border-top: 1px solid #29343e; background: transparent; color: #84909b; font: 9px/1 'Space Mono', monospace; text-align: left; text-transform: uppercase; cursor: pointer; }
-.edit-video:hover { color: #e6a263; background: #1d2933; }
+.video-name { display: block; overflow: hidden; padding: 9px 10px 7px; color: #d4dadd; font: 10px/1.2 'Space Mono', monospace; text-overflow: ellipsis; white-space: nowrap; }
+.video-name-input { display: block; width: calc(100% - 20px); margin: 7px 10px; padding: 3px 0; border: 0; border-bottom: 1px solid #d95f3f; outline: none; background: transparent; color: #f0f3f4; font: 10px/1.2 'Space Mono', monospace; }
+.icon-action { display: grid; place-items: center; width: 30px; padding: 0; border: 0; border-left: 1px solid #29343e; background: transparent; cursor: pointer; }
+.icon-action img { width: 15px; height: 15px; object-fit: contain; filter: invert(77%) sepia(8%) saturate(390%) hue-rotate(160deg); }
+.edit-video:hover { background: #1d2933; }
+.delete-video:hover { background: #321f20; }
+.delete-video img { filter: invert(60%) sepia(18%) saturate(800%) hue-rotate(315deg); }

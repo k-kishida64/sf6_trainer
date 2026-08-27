@@ -3,7 +3,9 @@ import { FFmpeg } from '@ffmpeg/ffmpeg'
 import { fetchFile } from '@ffmpeg/util'
 import coreURL from '@ffmpeg/core?url'
 import wasmURL from '@ffmpeg/core/wasm?url'
-import { getStoredVideos, renameStoredVideo, saveStoredVideo } from './videoStore'
+import { getStoredVideos, removeStoredVideo, renameStoredVideo, saveStoredVideo } from './videoStore'
+import editIcon from './assets/icon_B_0421.svg'
+import deleteIcon from './assets/icon_R_0740.svg'
 import './App.css'
 
 type VideoEntry = { id: string; label: string; src: string; kind: 'gif' | 'video' }
@@ -32,6 +34,8 @@ function App() {
   const [selectedVideo, setSelectedVideo] = useState<VideoEntry | null>(null)
   const [uploadedVideos, setUploadedVideos] = useState<VideoEntry[]>([])
   const [selectedVideoIds, setSelectedVideoIds] = useState<Set<string>>(new Set())
+  const [editingVideoId, setEditingVideoId] = useState<string | null>(null)
+  const [editingVideoLabel, setEditingVideoLabel] = useState('')
   const [waitSeconds, setWaitSeconds] = useState<number | null>(null)
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null)
   const [videoError, setVideoError] = useState(false)
@@ -42,6 +46,7 @@ function App() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const timerRef = useRef<number | null>(null)
   const countdownRef = useRef<number | null>(null)
+  const editingInputRef = useRef<HTMLInputElement>(null)
   const lastVideoIdRef = useRef<string | null>(null)
   const uploadedVideosRef = useRef(uploadedVideos)
   uploadedVideosRef.current = uploadedVideos
@@ -260,8 +265,18 @@ function App() {
     })
   }
 
-  const editVideoLabel = async (video: VideoEntry) => {
-    const nextLabel = window.prompt('GIFの名前', video.label)?.trim()
+  const startEditingVideoLabel = (video: VideoEntry) => {
+    setEditingVideoId(video.id)
+    setEditingVideoLabel(video.label)
+  }
+
+  useEffect(() => {
+    if (editingVideoId) editingInputRef.current?.select()
+  }, [editingVideoId])
+
+  const saveVideoLabel = async (video: VideoEntry) => {
+    const nextLabel = editingVideoLabel.trim()
+    setEditingVideoId(null)
     if (!nextLabel || nextLabel === video.label) return
     try {
       await renameStoredVideo(video.id, nextLabel)
@@ -273,6 +288,28 @@ function App() {
     } catch (error) {
       console.error(error)
       setConversionMessage('GIFの名前を変更できませんでした')
+    }
+  }
+
+  const deleteVideo = async (video: VideoEntry) => {
+    if (!window.confirm(`「${video.label}」を削除しますか？`)) return
+    try {
+      await removeStoredVideo(video.id)
+      URL.revokeObjectURL(video.src)
+      setUploadedVideos((current) => current.filter((currentVideo) => currentVideo.id !== video.id))
+      setSelectedVideoIds((current) => {
+        const next = new Set(current)
+        next.delete(video.id)
+        return next
+      })
+      if (selectedVideo?.id === video.id) {
+        stopSession()
+        setSelectedVideo(null)
+      }
+      setConversionMessage('GIFを削除しました')
+    } catch (error) {
+      console.error(error)
+      setConversionMessage('GIFを削除できませんでした')
     }
   }
 
@@ -358,12 +395,17 @@ function App() {
           {uploadedVideos.map((video) => <div className={`gif-card ${selectedVideo?.id === video.id ? 'is-selected' : ''}`} key={video.id}>
             <button className="gif-select" type="button" onClick={() => selectVideo(video)} aria-label={`${video.label}を選択`}>
               <img src={video.src} alt="" />
-              <span>{video.label}</span>
             </button>
-            <button className={`include-video ${selectedVideoIds.has(video.id) ? 'is-included' : ''}`} type="button" onClick={() => toggleVideoInDrill(video.id)} aria-pressed={selectedVideoIds.has(video.id)}>
-              {selectedVideoIds.has(video.id) ? 'In drill' : 'Excluded'}
-            </button>
-            <button className="edit-video" type="button" onClick={() => editVideoLabel(video)} aria-label={`${video.label}の名前を編集`}>Edit</button>
+            {editingVideoId === video.id
+              ? <input ref={editingInputRef} className="video-name-input" value={editingVideoLabel} onChange={(event) => setEditingVideoLabel(event.target.value)} onBlur={() => void saveVideoLabel(video)} onKeyDown={(event) => { if (event.key === 'Enter') void saveVideoLabel(video); if (event.key === 'Escape') setEditingVideoId(null) }} aria-label="GIFの名前" />
+              : <span className="video-name">{video.label}</span>}
+            <div className="gif-actions">
+              <button className={`include-video ${selectedVideoIds.has(video.id) ? 'is-included' : ''}`} type="button" onClick={() => toggleVideoInDrill(video.id)} aria-pressed={selectedVideoIds.has(video.id)}>
+                {selectedVideoIds.has(video.id) ? 'In drill' : 'Excluded'}
+              </button>
+              <button className="icon-action edit-video" type="button" onClick={() => startEditingVideoLabel(video)} aria-label={`${video.label}の名前を編集`} title="Edit name"><img src={editIcon} alt="" /></button>
+              <button className="icon-action delete-video" type="button" onClick={() => deleteVideo(video)} aria-label={`${video.label}を削除`} title="Delete"><img src={deleteIcon} alt="" /></button>
+            </div>
           </div>)}
         </div>
       </section>}
