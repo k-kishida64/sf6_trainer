@@ -10,6 +10,19 @@ type VideoEntry = { id: string; label: string; src: string; kind: 'gif' | 'video
 const videos: VideoEntry[] = []
 
 type SessionState = 'idle' | 'waiting' | 'playing' | 'finished'
+type GamepadSnapshot = { connected: boolean; name: string; pressed: string[]; axes: string[] }
+const directionNames = ['NW', 'N', 'NE', 'W', 'CENTER', 'E', 'SW', 'S', 'SE']
+const directionLabels: Record<string, string> = {
+  NW: '7', N: '8', NE: '9', W: '4', CENTER: '5', E: '6', SW: '1', S: '2', SE: '3',
+}
+const actionButtons = [
+  { label: 'P', color: 'blue', button: 'X', aliases: ['X'] },
+  { label: 'P', color: 'yellow', button: 'Y', aliases: ['Y'] },
+  { label: 'P', color: 'red', button: 'R', aliases: ['RB'] },
+  { label: 'K', color: 'blue', button: 'A', aliases: ['A'] },
+  { label: 'K', color: 'yellow', button: 'B', aliases: ['B'] },
+  { label: 'K', color: 'red', button: 'ZR', aliases: ['RT'] },
+]
 
 function App() {
   const [intervalSeconds, setIntervalSeconds] = useState(2)
@@ -23,6 +36,7 @@ function App() {
   const [isConverting, setIsConverting] = useState(false)
   const [conversionMessage, setConversionMessage] = useState('')
   const [roundNumber, setRoundNumber] = useState(0)
+  const [gamepad, setGamepad] = useState<GamepadSnapshot>({ connected: false, name: '', pressed: [], axes: [] })
   const videoRef = useRef<HTMLVideoElement>(null)
   const timerRef = useRef<number | null>(null)
   const countdownRef = useRef<number | null>(null)
@@ -97,6 +111,44 @@ function App() {
       if (timerRef.current !== null) window.clearTimeout(timerRef.current)
       if (countdownRef.current !== null) window.clearInterval(countdownRef.current)
       uploadedVideosRef.current.forEach((video) => URL.revokeObjectURL(video.src))
+    }
+  }, [])
+
+  useEffect(() => {
+    let animationFrame = 0
+    const buttonNames = ['A', 'B', 'X', 'Y', 'LB', 'RB', 'LT', 'RT', 'Back', 'Start', 'LS', 'RS', 'N', 'S', 'W', 'E']
+    const readGamepad = () => {
+      const connectedGamepad = navigator.getGamepads?.().find((pad): pad is Gamepad => pad !== null)
+      if (!connectedGamepad) {
+        setGamepad({ connected: false, name: '', pressed: [], axes: [] })
+      } else {
+        const pressed = connectedGamepad.buttons.reduce<string[]>((names, button, index) => {
+          if (button.pressed) names.push(buttonNames[index] ?? `Button ${index + 1}`)
+          return names
+        }, [])
+        const axes = connectedGamepad.axes
+          .map((value, index) => Math.abs(value) > 0.15 ? `${index % 2 === 0 ? 'L' : 'R'}${index < 2 ? 'X' : 'Y'} ${value.toFixed(2)}` : '')
+          .filter(Boolean)
+        const horizontal = connectedGamepad.axes[0] ?? 0
+        const vertical = connectedGamepad.axes[1] ?? 0
+        if (Math.abs(horizontal) > 0.15 || Math.abs(vertical) > 0.15) {
+          const verticalName = vertical < -0.15 ? 'N' : vertical > 0.15 ? 'S' : ''
+          const horizontalName = horizontal < -0.15 ? 'W' : horizontal > 0.15 ? 'E' : ''
+          const direction = `${verticalName}${horizontalName}`
+          if (direction && !pressed.includes(direction)) pressed.push(direction)
+        }
+        setGamepad({ connected: true, name: connectedGamepad.id, pressed, axes })
+      }
+      animationFrame = window.requestAnimationFrame(readGamepad)
+    }
+    const connect = () => readGamepad()
+    window.addEventListener('gamepadconnected', connect)
+    window.addEventListener('gamepaddisconnected', connect)
+    animationFrame = window.requestAnimationFrame(readGamepad)
+    return () => {
+      window.cancelAnimationFrame(animationFrame)
+      window.removeEventListener('gamepadconnected', connect)
+      window.removeEventListener('gamepaddisconnected', connect)
     }
   }, [])
 
@@ -205,6 +257,14 @@ function App() {
         ) : (
           <video ref={videoRef} className="training-video" src={selectedVideo.src} playsInline muted preload="auto" controls={sessionState === 'playing' || sessionState === 'finished'} onError={() => setVideoError(true)} onEnded={() => setSessionState('finished')} />
         ) : <div className="empty-stage"><span className="crosshair">+</span><p>Choose a drill to begin</p></div>}
+        {gamepad.connected && <div className="controller-overlay" aria-label="Live controller input">
+          <div className="direction-pad">
+            {directionNames.map((direction) => <span key={direction} className={`direction direction-${direction.toLowerCase()} ${gamepad.pressed.includes(direction) ? 'is-pressed' : ''}`}>{directionLabels[direction]}</span>)}
+          </div>
+          <div className="action-grid">
+            {actionButtons.map((button) => <span key={`${button.label}-${button.color}`} className={`action-button button-${button.color} ${button.aliases.some((alias) => gamepad.pressed.includes(alias)) ? 'is-pressed' : ''}`}><b>{button.label}</b><small>{button.button}</small></span>)}
+          </div>
+        </div>}
         <div className="stage-meta"><span>{selectedVideo?.label ?? 'No drill selected'}</span><span className={`status status-${sessionState}`}><i />{statusLabel}</span></div>
         {sessionState === 'waiting' && <div className="countdown"><strong>{displayTime}</strong><span>seconds</span></div>}
         {videoError && <p className="video-error">動画を読み込めません。ファイル形式とパスを確認してください。</p>}
@@ -220,6 +280,14 @@ function App() {
         <div className="actions"><button className="primary-action" type="button" onClick={startSession}><span>▶</span> Start drill</button><button className="secondary-action" type="button" onClick={stopSession} disabled={sessionState === 'idle'}>Stop</button><button className="reset-action" type="button" onClick={resetSession} aria-label="Reset session">↻</button></div>
         <label className={`upload-control ${isConverting ? 'is-converting' : ''}`}><span>＋</span> {isConverting ? 'Converting...' : 'Add MOV / MP4 / GIF'}<input type="file" accept="video/quicktime,video/mp4,image/gif,.mov,.mp4,.gif" multiple onChange={handleVideoUpload} disabled={isConverting} /></label>
         <p className="helper-text">{conversionMessage || 'MOV and MP4 files are converted to GIF locally on this device.'}</p>
+      </section>
+
+      <section className="gamepad-panel">
+        <div className="panel-heading"><div><p className="eyebrow">Controller input</p><h2>Bluetooth pad</h2></div><span className={`connection-label ${gamepad.connected ? 'connected' : ''}`}><i />{gamepad.connected ? 'Connected' : 'Waiting'}</span></div>
+        {gamepad.connected ? <>
+          <p className="controller-name">{gamepad.name}</p>
+          <div className="input-readout"><span className="readout-label">Pressed</span><strong>{gamepad.pressed.length > 0 ? gamepad.pressed.join('  ') : 'None'}</strong></div>
+        </> : <p className="helper-text">コントローラーのボタンを一度押すと接続を検出します。</p>}
       </section>
 
       <footer><span>DRILL LIBRARY <b>{availableVideos.length.toString().padStart(2, '0')}</b></span><span>LOCAL / NO ACCOUNT</span></footer>

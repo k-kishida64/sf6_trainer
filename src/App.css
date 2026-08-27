@@ -45,6 +45,7 @@ h2 { font-size: 25px; line-height: 1; }
 .actions { margin-top: 26px; gap: 9px; }.actions button { min-height: 45px; border: 1px solid transparent; font: 700 12px/1 'Space Mono', monospace; letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; transition: transform 0.2s, background 0.2s, border-color 0.2s; }.actions button:active { transform: translateY(1px); }.primary-action { flex: 1; background: #d95f3f; color: #151a20; }.primary-action:hover { background: #ed7250; }.primary-action span { margin-right: 8px; }.secondary-action { padding: 0 18px; border-color: #56636e !important; background: transparent; color: #d4dadd; }.secondary-action:hover { border-color: #d4dadd !important; }.secondary-action:disabled { cursor: not-allowed; opacity: 0.35; }.reset-action { width: 45px; background: #26323c; color: #d4dadd; font-size: 20px !important; }.reset-action:hover { background: #34424e; }.helper-text { margin: 17px 0 0; color: #76848f; font: 10px/1.5 'Space Mono', monospace; }
 .upload-control { display: inline-flex; align-items: center; gap: 8px; margin-top: 16px; color: #c8d0d5; font: 10px/1 'Space Mono', monospace; text-transform: uppercase; cursor: pointer; }.upload-control span { color: #d95f3f; font-size: 16px; }.upload-control input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .upload-control.is-converting { color: #e6a263; cursor: wait; }
+.gamepad-panel { margin-top: 18px; padding: 22px; border: 1px solid #303b45; background: #111820; }.connection-label { color: #84909b; font: 10px/1 'Space Mono', monospace; text-transform: uppercase; }.connection-label i { display: inline-block; width: 6px; height: 6px; margin-right: 7px; border-radius: 50%; background: #687681; }.connection-label.connected { color: #78b979; }.connection-label.connected i { background: #78b979; }.controller-name { overflow: hidden; margin: 18px 0 12px; color: #687681; font: 9px/1.3 'Space Mono', monospace; text-overflow: ellipsis; white-space: nowrap; }.controller-layout { display: flex; align-items: center; justify-content: space-between; min-height: 170px; padding: 12px 8%; border-top: 1px solid #29343e; border-bottom: 1px solid #29343e; }.direction-pad { position: relative; width: 150px; height: 150px; }.direction { position: absolute; display: grid; place-items: center; width: 39px; height: 39px; color: #20262c; background: #d1d3d1; border: 1px solid #818a8f; font: 22px/1 'Barlow Condensed', sans-serif; box-shadow: 0 3px 0 #747d82; }.direction.is-pressed { transform: translateY(2px); background: #e6a263; box-shadow: 0 1px 0 #9a6943; }.direction-n { top: 0; left: 55px; }.direction-ne { top: 12px; right: 11px; }.direction-e { top: 55px; right: 0; }.direction-se { right: 11px; bottom: 12px; }.direction-s { bottom: 0; left: 55px; }.direction-sw { bottom: 12px; left: 11px; }.direction-w { top: 55px; left: 0; }.direction-nw { top: 12px; left: 11px; }.action-grid { display: grid; grid-template-columns: repeat(3, 48px); gap: 13px 10px; }.action-button { display: grid; place-items: center; width: 48px; height: 48px; border: 1px solid #3c454b; border-radius: 50%; color: #151a20; box-shadow: 0 4px 0 rgba(0,0,0,0.35); }.action-button b { font: 700 20px/0.8 'Barlow Condensed', sans-serif; }.action-button small { font: 8px/1 'Space Mono', monospace; opacity: 0.7; }.button-blue { background: #3a9bab; }.button-yellow { background: #b8b748; }.button-red { background: #9e4040; color: #f0d9d4; }.action-button.is-pressed { transform: translateY(3px) scale(0.96); box-shadow: 0 1px 0 rgba(0,0,0,0.35); filter: brightness(1.3); }.input-readout { display: flex; align-items: center; justify-content: space-between; min-height: 39px; }.readout-label { color: #84909b; font: 10px/1 'Space Mono', monospace; text-transform: uppercase; }.input-readout strong { color: #e6a263; font: 700 12px/1 'Space Mono', monospace; text-align: right; }
 footer { justify-content: space-between; margin-top: 24px; color: #687681; font: 10px/1 'Space Mono', monospace; letter-spacing: 0.05em; } footer b { color: #aeb8c0; font-weight: 400; }
 @keyframes pulse { 50% { opacity: 0.45; } }
 @media (max-width: 520px) { .app-shell { padding: 20px 14px 18px; }.topbar { margin-bottom: 20px; }.brand-mark { width: 38px; height: 38px; }.offline-badge { padding: 7px; font-size: 9px; }.stage { aspect-ratio: 1.85 / 1; min-height: 180px; }.stage-meta { right: 12px; bottom: 12px; left: 12px; font-size: 9px; }.control-panel { padding: 18px 15px; }.range-controls { margin-top: 21px; }.actions button { min-height: 48px; }.secondary-action { padding: 0 12px; }footer { font-size: 9px; } }
@@ -211,6 +212,24 @@ footer { justify-content: space-between; margin-top: 24px; color: #687681; font:
   }
 }
 
+@media (max-width: 520px) {
+  .direction-pad {
+    display: grid;
+    grid-template-columns: repeat(3, 32px);
+    grid-template-rows: repeat(3, 32px);
+    width: 96px;
+    height: 96px;
+  }
+
+  .direction {
+    position: static;
+    inset: auto;
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+}
+
 .ticks {
   position: relative;
   width: 100%;
@@ -230,5 +249,59 @@ footer { justify-content: space-between; margin-top: 24px; color: #687681; font:
   &::after {
     right: 0;
     border-right-color: var(--border);
+  }
+}
+
+.controller-overlay {
+  position: absolute;
+  z-index: 4;
+  top: 18px;
+  left: 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid rgba(210, 220, 225, 0.3);
+  background: rgba(10, 14, 18, 0.72);
+  backdrop-filter: blur(3px);
+}
+
+.controller-overlay .direction-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 32px);
+  grid-template-rows: repeat(3, 32px);
+  width: 96px;
+  height: 96px;
+}
+
+.controller-overlay .direction {
+  position: static;
+  inset: auto;
+  width: 32px;
+  height: 32px;
+  font-size: 14px;
+}
+
+.controller-overlay .action-grid {
+  grid-template-columns: repeat(3, 32px);
+  gap: 6px 5px;
+}
+
+.controller-overlay .action-button {
+  width: 32px;
+  height: 32px;
+}
+
+.controller-overlay .action-button b { font-size: 15px; }
+.controller-overlay .action-button small { font-size: 6px; }
+
+@media (max-width: 520px) {
+  .controller-overlay {
+    top: 10px;
+    left: 10px;
+    gap: 6px;
+    padding: 5px;
+    transform: scale(0.84);
+    transform-origin: top left;
   }
 }
