@@ -305,3 +305,17 @@ footer { justify-content: space-between; margin-top: 24px; color: #687681; font:
     transform-origin: top left;
   }
 }
+
+.include-video { width: 100%; padding: 7px 10px; border: 0; border-top: 1px solid #29343e; background: #1a222a; color: #84909b; font: 9px/1 'Space Mono', monospace; text-align: left; text-transform: uppercase; cursor: pointer; }
+.include-video.is-included { color: #78b979; }
+.include-video:hover { background: #25323d; color: #e6a263; }
+
+.library-panel { margin-top: 18px; padding: 22px; border: 1px solid #303b45; background: #182029; }
+.gif-library { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-top: 20px; }
+.gif-card { min-width: 0; border: 1px solid #3a4650; background: #111820; }
+.gif-card.is-selected { border-color: #d95f3f; }
+.gif-select { display: block; width: 100%; padding: 0; border: 0; background: transparent; color: #d4dadd; text-align: left; cursor: pointer; }
+.gif-select img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #080b0f; }
+.gif-select span { display: block; overflow: hidden; padding: 9px 10px 7px; font: 10px/1.2 'Space Mono', monospace; text-overflow: ellipsis; white-space: nowrap; }
+.edit-video { width: 100%; padding: 7px 10px; border: 0; border-top: 1px solid #29343e; background: transparent; color: #84909b; font: 9px/1 'Space Mono', monospace; text-align: left; text-transform: uppercase; cursor: pointer; }
+.edit-video:hover { color: #e6a263; background: #1d2933; }

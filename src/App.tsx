@@ -3,6 +3,7 @@ import { FFmpeg } from '@ffmpeg/ffmpeg'
 import { fetchFile } from '@ffmpeg/util'
 import coreURL from '@ffmpeg/core?url'
 import wasmURL from '@ffmpeg/core/wasm?url'
+import { getStoredVideos, renameStoredVideo, saveStoredVideo } from './videoStore'
 import './App.css'
 
 type VideoEntry = { id: string; label: string; src: string; kind: 'gif' | 'video' }
@@ -30,6 +31,7 @@ function App() {
   const [sessionState, setSessionState] = useState<SessionState>('idle')
   const [selectedVideo, setSelectedVideo] = useState<VideoEntry | null>(null)
   const [uploadedVideos, setUploadedVideos] = useState<VideoEntry[]>([])
+  const [selectedVideoIds, setSelectedVideoIds] = useState<Set<string>>(new Set())
   const [waitSeconds, setWaitSeconds] = useState<number | null>(null)
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null)
   const [videoError, setVideoError] = useState(false)
@@ -44,7 +46,28 @@ function App() {
   const uploadedVideosRef = useRef(uploadedVideos)
   uploadedVideosRef.current = uploadedVideos
 
-  const availableVideos = [...videos, ...uploadedVideos]
+  const availableVideos = [...videos, ...uploadedVideos.filter((video) => selectedVideoIds.has(video.id))]
+
+  useEffect(() => {
+    let cancelled = false
+    getStoredVideos()
+      .then((storedVideos) => {
+        if (cancelled) return
+        const loadedVideos: VideoEntry[] = storedVideos.map((video) => ({
+          id: video.id,
+          label: video.label,
+          src: URL.createObjectURL(video.blob),
+          kind: 'gif',
+        }))
+        setUploadedVideos(loadedVideos)
+        setSelectedVideoIds(new Set(loadedVideos.map((video) => video.id)))
+      })
+      .catch((error) => {
+        console.error(error)
+        setConversionMessage('保存済み動画を読み込めませんでした')
+      })
+    return () => { cancelled = true }
+  }, [])
 
   const handleVideoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? [])
@@ -62,7 +85,13 @@ function App() {
     const sourceFiles = files.filter((file) => !directGifs.some((video) => video.id === `${file.name}-${file.lastModified}`))
 
     if (sourceFiles.length === 0) {
+      await Promise.all(files.map((file) => saveStoredVideo({
+        id: `${file.name}-${file.lastModified}`,
+        label: file.name.replace(/\.[^/.]+$/, ''),
+        blob: file,
+      })))
       setUploadedVideos((current) => [...current, ...directGifs])
+      setSelectedVideoIds((current) => new Set([...current, ...directGifs.map((video) => video.id)]))
       setConversionMessage(`${directGifs.length}本のGIFを追加しました`)
       return
     }
@@ -92,10 +121,12 @@ function App() {
           src: URL.createObjectURL(gifBlob),
           kind: 'gif',
         })
+        await saveStoredVideo({ id: `${file.name}-${file.lastModified}`, label, blob: gifBlob })
         await ffmpeg.deleteFile(inputName)
         await ffmpeg.deleteFile(outputName)
       }
       setUploadedVideos((current) => [...current, ...directGifs, ...newVideos])
+      setSelectedVideoIds((current) => new Set([...current, ...directGifs.map((video) => video.id), ...newVideos.map((video) => video.id)]))
       setConversionMessage(`${directGifs.length + newVideos.length}本のGIFを追加しました`)
     } catch (error) {
       console.error(error)
@@ -214,6 +245,37 @@ function App() {
     setRemainingSeconds(null)
   }
 
+  const selectVideo = (video: VideoEntry) => {
+    stopSession()
+    setSelectedVideo(video)
+    setVideoError(false)
+  }
+
+  const toggleVideoInDrill = (videoId: string) => {
+    setSelectedVideoIds((current) => {
+      const next = new Set(current)
+      if (next.has(videoId)) next.delete(videoId)
+      else next.add(videoId)
+      return next
+    })
+  }
+
+  const editVideoLabel = async (video: VideoEntry) => {
+    const nextLabel = window.prompt('GIFの名前', video.label)?.trim()
+    if (!nextLabel || nextLabel === video.label) return
+    try {
+      await renameStoredVideo(video.id, nextLabel)
+      setUploadedVideos((current) => current.map((currentVideo) => currentVideo.id === video.id
+        ? { ...currentVideo, label: nextLabel }
+        : currentVideo))
+      setSelectedVideo((current) => current?.id === video.id ? { ...current, label: nextLabel } : current)
+      setConversionMessage('GIFの名前を変更しました')
+    } catch (error) {
+      console.error(error)
+      setConversionMessage('GIFの名前を変更できませんでした')
+    }
+  }
+
   const resetSession = () => {
     stopSession()
     lastVideoIdRef.current = null
@@ -277,7 +339,7 @@ function App() {
           <div className="range-connector" />
           <label><span>Play</span><div className="number-input"><input type="number" min="0.1" max="60" step="0.5" value={playSeconds} onChange={(event) => setPlaySeconds(Number(event.target.value))} /><b>s</b></div></label>
         </div>
-        <div className="actions"><button className="primary-action" type="button" onClick={startSession}><span>▶</span> Start drill</button><button className="secondary-action" type="button" onClick={stopSession} disabled={sessionState === 'idle'}>Stop</button><button className="reset-action" type="button" onClick={resetSession} aria-label="Reset session">↻</button></div>
+        <div className="actions"><button className="primary-action" type="button" onClick={startSession}><span>▶</span> Start drill</button><button className="reset-action" type="button" onClick={resetSession} aria-label="Reset session">↻</button></div>
         <label className={`upload-control ${isConverting ? 'is-converting' : ''}`}><span>＋</span> {isConverting ? 'Converting...' : 'Add MOV / MP4 / GIF'}<input type="file" accept="video/quicktime,video/mp4,image/gif,.mov,.mp4,.gif" multiple onChange={handleVideoUpload} disabled={isConverting} /></label>
         <p className="helper-text">{conversionMessage || 'MOV and MP4 files are converted to GIF locally on this device.'}</p>
       </section>
@@ -289,6 +351,22 @@ function App() {
           <div className="input-readout"><span className="readout-label">Pressed</span><strong>{gamepad.pressed.length > 0 ? gamepad.pressed.join('  ') : 'None'}</strong></div>
         </> : <p className="helper-text">コントローラーのボタンを一度押すと接続を検出します。</p>}
       </section>
+
+      {uploadedVideos.length > 0 && <section className="library-panel">
+        <div className="panel-heading"><div><p className="eyebrow">Saved locally</p><h2>GIF library</h2></div><span className="range-label">{uploadedVideos.length.toString().padStart(2, '0')} clips</span></div>
+        <div className="gif-library">
+          {uploadedVideos.map((video) => <div className={`gif-card ${selectedVideo?.id === video.id ? 'is-selected' : ''}`} key={video.id}>
+            <button className="gif-select" type="button" onClick={() => selectVideo(video)} aria-label={`${video.label}を選択`}>
+              <img src={video.src} alt="" />
+              <span>{video.label}</span>
+            </button>
+            <button className={`include-video ${selectedVideoIds.has(video.id) ? 'is-included' : ''}`} type="button" onClick={() => toggleVideoInDrill(video.id)} aria-pressed={selectedVideoIds.has(video.id)}>
+              {selectedVideoIds.has(video.id) ? 'In drill' : 'Excluded'}
+            </button>
+            <button className="edit-video" type="button" onClick={() => editVideoLabel(video)} aria-label={`${video.label}の名前を編集`}>Edit</button>
+          </div>)}
+        </div>
+      </section>}
 
       <footer><span>DRILL LIBRARY <b>{availableVideos.length.toString().padStart(2, '0')}</b></span><span>LOCAL / NO ACCOUNT</span></footer>
     </main>
