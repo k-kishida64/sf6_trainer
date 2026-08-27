@@ -37,11 +37,12 @@ initial_project_structure:
     - "src/"
     - "src/App.tsx"
   video_storage:
-    location: "public/videos/"
-    example:
-      - "public/videos/video01.mp4"
-      - "public/videos/video02.mp4"
-      - "public/videos/video03.mp4"
+    location: "ブラウザ内IndexedDB（sf6-trainer / videos）"
+    format: "GIF"
+    details:
+      - "MOV / MP4はブラウザ内でGIFへ変換して保存する"
+      - "GIFは端末・ブラウザごとに分離して保存される"
+      - "GIFの名前編集・削除・ドリル対象への含有切替に対応する"
 
 core_requirements:
   main:
