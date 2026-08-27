@@ -116,7 +116,7 @@ function App() {
         const inputName = `input-${file.lastModified}.${file.name.split('.').pop() ?? 'mp4'}`
         const outputName = `output-${file.lastModified}.gif`
         await ffmpeg.writeFile(inputName, await fetchFile(file))
-        await ffmpeg.exec(['-i', inputName, '-vf', 'fps=8,scale=360:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=96:stats_mode=diff[p];[s1][p]paletteuse=dither=bayer:bayer_scale=3', '-t', '15', '-loop', '0', outputName])
+        await ffmpeg.exec(['-i', inputName, '-vf', 'fps=12,scale=480:-1:flags=lanczos', '-t', '15', '-loop', '0', outputName])
         const output = await ffmpeg.readFile(outputName)
         const gifBytes = typeof output === 'string' ? new TextEncoder().encode(output) : output
         const gifBlob = new Blob([gifBytes as unknown as BlobPart], { type: 'image/gif' })
