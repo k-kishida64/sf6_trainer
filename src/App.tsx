@@ -19,12 +19,12 @@ const directionLabels: Record<string, string> = {
   NW: '7', N: '8', NE: '9', W: '4', CENTER: '5', E: '6', SW: '1', S: '2', SE: '3',
 }
 const actionButtons = [
-  { label: 'P', color: 'skyblue', button: 'X', aliases: ['X'] },
-  { label: 'P', color: 'lightyellow', button: 'Y', aliases: ['Y'] },
-  { label: 'P', color: 'tomato', button: 'R', aliases: ['RB'] },
-  { label: 'K', color: 'skyblue', button: 'A', aliases: ['A'] },
-  { label: 'K', color: 'lightyellow', button: 'B', aliases: ['B'] },
-  { label: 'K', color: 'tomato', button: 'ZR', aliases: ['RT'] },
+  { label: 'P', color: 'blue', button: 'X', aliases: ['X'] },
+  { label: 'P', color: 'yellow', button: 'Y', aliases: ['Y'] },
+  { label: 'P', color: 'red', button: 'R', aliases: ['RB'] },
+  { label: 'K', color: 'blue', button: 'A', aliases: ['A'] },
+  { label: 'K', color: 'yellow', button: 'B', aliases: ['B'] },
+  { label: 'K', color: 'red', button: 'ZR', aliases: ['RT'] },
 ]
 
 function App() {
